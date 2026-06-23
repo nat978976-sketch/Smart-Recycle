@@ -11,11 +11,16 @@ export function useWasteReports(status?: WasteReport['status']) {
 
   const fetchReports = useCallback(async () => {
     const query = status ? `?status=${status}` : '';
-    const response = await fetch(`/api/waste-reports${query}`);
-    if (response.ok) {
-      setReports(await response.json());
+    try {
+      const response = await fetch(`/api/waste-reports${query}`);
+      if (response.ok) {
+        setReports(await response.json());
+      }
+    } catch {
+      // เซิร์ฟเวอร์เข้าถึงไม่ได้ชั่วคราว (เช่น dev server กำลังรีสตาร์ท) ข้ามรอบโพลนี้ไปก่อน
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, [status]);
 
   useEffect(() => {

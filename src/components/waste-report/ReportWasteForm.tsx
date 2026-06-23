@@ -18,6 +18,7 @@ export default function ReportWasteForm({ initialPosition, onClose, onSubmit }: 
   const [isClassifying, setIsClassifying] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   async function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -43,6 +44,7 @@ export default function ReportWasteForm({ initialPosition, onClose, onSubmit }: 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       await onSubmit({
         userId: 'current-user',
@@ -53,6 +55,8 @@ export default function ReportWasteForm({ initialPosition, onClose, onSubmit }: 
         note: note || undefined,
         acceptedByShopId: null,
       });
+    } catch {
+      setSubmitError('ส่งคำขอไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่');
     } finally {
       setIsSubmitting(false);
     }
@@ -119,6 +123,8 @@ export default function ReportWasteForm({ initialPosition, onClose, onSubmit }: 
           placeholder="เช่น จุดสังเกต, ปริมาณขยะโดยประมาณ"
           className="mb-4 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:outline-none"
         />
+
+        {submitError && <p className="mb-3 text-sm text-red-600">{submitError}</p>}
 
         <button
           type="submit"
