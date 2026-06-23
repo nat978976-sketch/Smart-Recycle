@@ -12,6 +12,19 @@ import type { Coordinates, RecyclingShop, WasteReport } from '@/types';
 // ศูนย์กลางเทศบาลนครขอนแก่น ใช้เป็นจุดตั้งต้นของแผนที่ก่อนทราบตำแหน่งผู้ใช้
 const KHON_KAEN_CENTER: Coordinates = { latitude: 16.4419, longitude: 102.836 };
 
+type MapLayerType = 'street' | 'satellite';
+
+const TILE_LAYERS: Record<MapLayerType, { url: string; attribution: string }> = {
+  street: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+  },
+};
+
 interface MapViewProps {
   wasteReports?: WasteReport[];
   recyclingShops?: RecyclingShop[];
@@ -37,6 +50,7 @@ function RecenterControl({ position }: { position: Coordinates | null }) {
 export default function MapView({ wasteReports = [], recyclingShops = [], onSubmitReport }: MapViewProps) {
   const { latitude, longitude, error, isLoading } = useGeolocation();
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [mapLayer, setMapLayer] = useState<MapLayerType>('street');
 
   const userPosition = useMemo<Coordinates | null>(
     () => (latitude !== null && longitude !== null ? { latitude, longitude } : null),
@@ -54,8 +68,9 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
         className="h-full w-full"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          key={mapLayer}
+          attribution={TILE_LAYERS[mapLayer].attribution}
+          url={TILE_LAYERS[mapLayer].url}
         />
 
         {userPosition && (
@@ -86,6 +101,15 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
 
         <RecenterControl position={userPosition} />
       </MapContainer>
+
+      <button
+        type="button"
+        onClick={() => setMapLayer((prev) => (prev === 'street' ? 'satellite' : 'street'))}
+        className="absolute right-3 top-16 z-[1000] rounded-full bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-md hover:bg-gray-100"
+        aria-label="สลับรูปแบบแผนที่"
+      >
+        {mapLayer === 'street' ? '🛰️ ดาวเทียม' : '🗺️ แผนที่ถนน'}
+      </button>
 
       <div className="absolute bottom-6 left-1/2 z-[1000] -translate-x-1/2">
         <button
