@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { addWasteReport, getWasteReports } from '@/lib/store/wasteReportsStore';
+import { emitReportCreated } from '@/lib/events/reportEvents';
 import type { WasteReport } from '@/types';
 
 export async function GET(request: Request) {
@@ -27,5 +28,6 @@ export async function POST(request: Request) {
   };
 
   addWasteReport(report);
+  emitReportCreated(report);
   return NextResponse.json(report, { status: 201 });
 }

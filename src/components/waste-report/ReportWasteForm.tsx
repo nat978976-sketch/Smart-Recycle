@@ -5,6 +5,16 @@ import { classifyWasteImage } from '@/lib/ai/classifyWaste';
 import type { Coordinates, WasteReport, WasteType } from '@/types';
 import { WASTE_TYPE_LABELS } from '@/types';
 
+// แปลงเป็น data URL (ไม่ใช่ blob URL) เพื่อให้ฝั่งร้านรับซื้อที่อยู่คนละแท็บ/เบราว์เซอร์เห็นรูปได้จริง
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 interface ReportWasteFormProps {
   initialPosition: Coordinates;
   onClose: () => void;
@@ -24,7 +34,7 @@ export default function ReportWasteForm({ initialPosition, onClose, onSubmit }: 
     const files = Array.from(event.target.files ?? []);
     if (files.length === 0) return;
 
-    setPreviewUrls(files.map((file) => URL.createObjectURL(file)));
+    setPreviewUrls(await Promise.all(files.map(readFileAsDataUrl)));
     setIsClassifying(true);
     setAiSuggestion(null);
 
