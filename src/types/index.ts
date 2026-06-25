@@ -17,7 +17,15 @@ export const WASTE_TYPE_LABELS: Record<WasteType, string> = {
   mixed: 'ขยะคละ/ไม่แน่ใจ',
 };
 
-export type ReportStatus = 'pending' | 'accepted' | 'completed' | 'cancelled';
+export type ReportStatus = 'pending' | 'accepted' | 'truck_dispatched' | 'completed' | 'cancelled';
+
+export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
+  pending: 'รอร้านรับงาน',
+  accepted: 'ร้านรับงานแล้ว',
+  truck_dispatched: 'เรียกรถแล้ว กำลังไปรับ',
+  completed: 'เก็บเรียบร้อยแล้ว',
+  cancelled: 'ยกเลิก',
+};
 
 export interface Coordinates {
   latitude: number;

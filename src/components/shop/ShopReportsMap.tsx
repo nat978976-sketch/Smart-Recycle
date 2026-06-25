@@ -2,8 +2,8 @@
 
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { recyclingHubIcon, wasteReportIcon } from '@/components/map/icons';
-import { WASTE_TYPE_LABELS } from '@/types';
+import { recyclingHubIcon, truckDispatchedIcon, wasteReportIcon } from '@/components/map/icons';
+import { REPORT_STATUS_LABELS, WASTE_TYPE_LABELS } from '@/types';
 import type { RecyclingShop, WasteReport } from '@/types';
 
 interface ShopReportsMapProps {
@@ -29,9 +29,14 @@ export default function ShopReportsMap({ shop, reports }: ShopReportsMapProps) {
       </Marker>
 
       {reports.map((report) => (
-        <Marker key={report.id} position={[report.latitude, report.longitude]} icon={wasteReportIcon}>
+        <Marker
+          key={report.id}
+          position={[report.latitude, report.longitude]}
+          icon={report.status === 'truck_dispatched' ? truckDispatchedIcon : wasteReportIcon}
+        >
           <Popup>
             <p className="font-semibold">{WASTE_TYPE_LABELS[report.wasteType]}</p>
+            <p>{REPORT_STATUS_LABELS[report.status]}</p>
             {report.note && <p>{report.note}</p>}
           </Popup>
         </Marker>

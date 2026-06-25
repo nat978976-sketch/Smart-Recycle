@@ -26,3 +26,4 @@ function buildPinIcon(color: string, emoji: string) {
 export const userLocationIcon = buildPinIcon('#2563eb', '📍');
 export const wasteReportIcon = buildPinIcon('#f97316', '🗑️');
 export const recyclingHubIcon = buildPinIcon('#059669', '♻️');
+export const truckDispatchedIcon = buildPinIcon('#9333ea', '🚚');

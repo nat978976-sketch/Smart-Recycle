@@ -8,13 +8,21 @@ interface UseShopReportStreamOptions {
   radiusKm?: number;
 }
 
+async function patchReport(reportId: string, body: Record<string, unknown>) {
+  await fetch(`/api/waste-reports/${reportId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
 export function useShopReportStream({ shopId, radiusKm = 5 }: UseShopReportStreamOptions) {
   const [reports, setReports] = useState<WasteReport[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [newReportId, setNewReportId] = useState<string | null>(null);
 
   useEffect(() => {
-    const params = new URLSearchParams({ status: 'pending', shopId, radiusKm: String(radiusKm) });
+    const params = new URLSearchParams({ shopId, radiusKm: String(radiusKm) });
     const source = new EventSource(`/api/waste-reports/stream?${params.toString()}`);
 
     source.onerror = () => setIsConnected(false);
@@ -32,28 +40,34 @@ export function useShopReportStream({ shopId, radiusKm = 5 }: UseShopReportStrea
 
     source.addEventListener('updated', (event) => {
       const updated: WasteReport = JSON.parse((event as MessageEvent<string>).data);
-      setReports((prev) =>
-        updated.status === 'pending'
-          ? prev.map((report) => (report.id === updated.id ? updated : report))
-          : prev.filter((report) => report.id !== updated.id)
-      );
+      setReports((prev) => {
+        const isMine = updated.acceptedByShopId === shopId;
+        const isActive = updated.status === 'pending' || updated.status === 'accepted' || updated.status === 'truck_dispatched';
+        const stillRelevant = isActive && (updated.status === 'pending' || isMine);
+
+        if (!stillRelevant) {
+          return prev.filter((report) => report.id !== updated.id);
+        }
+        return prev.map((report) => (report.id === updated.id ? updated : report));
+      });
     });
 
     return () => source.close();
   }, [shopId, radiusKm]);
 
   const acceptReport = useCallback(
-    async (reportId: string) => {
-      await fetch(`/api/waste-reports/${reportId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'accepted', acceptedByShopId: shopId }),
-      });
-    },
+    (reportId: string) => patchReport(reportId, { status: 'accepted', acceptedByShopId: shopId }),
     [shopId]
   );
 
+  const confirmTruckDispatch = useCallback(
+    (reportId: string) => patchReport(reportId, { status: 'truck_dispatched' }),
+    []
+  );
+
+  const completeReport = useCallback((reportId: string) => patchReport(reportId, { status: 'completed' }), []);
+
   const clearNewReportFlag = useCallback(() => setNewReportId(null), []);
 
-  return { reports, isConnected, newReportId, clearNewReportFlag, acceptReport };
+  return { reports, isConnected, newReportId, clearNewReportFlag, acceptReport, confirmTruckDispatch, completeReport };
 }

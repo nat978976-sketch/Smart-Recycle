@@ -5,7 +5,7 @@ create type waste_type as enum (
   'plastic', 'paper', 'glass', 'metal', 'electronic', 'organic', 'mixed'
 );
 
-create type report_status as enum ('pending', 'accepted', 'completed', 'cancelled');
+create type report_status as enum ('pending', 'accepted', 'truck_dispatched', 'completed', 'cancelled');
 
 create table profiles (
   id uuid primary key references auth.users (id) on delete cascade,

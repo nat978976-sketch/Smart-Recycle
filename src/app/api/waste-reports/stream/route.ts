@@ -1,6 +1,6 @@
 import { getReportEmitter } from '@/lib/events/reportEvents';
 import { getWasteReports } from '@/lib/store/wasteReportsStore';
-import { SEED_RECYCLING_SHOPS } from '@/lib/data/recyclingShops';
+import { getRecyclingShops } from '@/lib/store/recyclingShopsStore';
 import { distanceKm } from '@/lib/geo/distance';
 import type { WasteReport } from '@/types';
 
@@ -13,16 +13,23 @@ function toSseMessage(event: string, data: unknown) {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const status = searchParams.get('status');
   const shopId = searchParams.get('shopId');
   const radiusKm = Number(searchParams.get('radiusKm')) || 5;
 
-  const shop = shopId ? SEED_RECYCLING_SHOPS.find((candidate) => candidate.id === shopId) : null;
+  const shop = shopId ? getRecyclingShops().find((candidate) => candidate.id === shopId) : null;
 
+  // คำขอที่ pending ให้กรองด้วยระยะทาง/ประเภทขยะที่ร้านรับ
+  // คำขอที่ร้านนี้รับงานไปแล้ว (accepted/truck_dispatched) ให้เห็นต่อแม้จะอยู่นอกระยะ เพื่อให้ตามงานของตัวเองต่อได้
+  // ส่วนงานที่เสร็จ/ยกเลิกแล้วไม่ต้องส่งผ่านสตรีมนี้อีก
   function isRelevant(report: WasteReport) {
-    if (status && report.status !== status) return false;
-    if (!shop) return true;
-    return shop.acceptedWasteTypes.includes(report.wasteType) && distanceKm(shop, report) <= radiusKm;
+    if (report.status === 'pending') {
+      if (!shop) return true;
+      return shop.acceptedWasteTypes.includes(report.wasteType) && distanceKm(shop, report) <= radiusKm;
+    }
+    if (report.status === 'accepted' || report.status === 'truck_dispatched') {
+      return shop ? report.acceptedByShopId === shop.id : true;
+    }
+    return false;
   }
 
   const emitter = getReportEmitter();

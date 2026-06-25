@@ -5,8 +5,8 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import ReportWasteForm from '@/components/waste-report/ReportWasteForm';
-import { recyclingHubIcon, userLocationIcon, wasteReportIcon } from './icons';
-import { WASTE_TYPE_LABELS } from '@/types';
+import { recyclingHubIcon, truckDispatchedIcon, userLocationIcon, wasteReportIcon } from './icons';
+import { REPORT_STATUS_LABELS, WASTE_TYPE_LABELS } from '@/types';
 import type { Coordinates, RecyclingShop, WasteReport } from '@/types';
 
 // ศูนย์กลางเทศบาลนครขอนแก่น ใช้เป็นจุดตั้งต้นของแผนที่ก่อนทราบตำแหน่งผู้ใช้
@@ -59,6 +59,12 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
 
   const mapCenter = userPosition ?? KHON_KAEN_CENTER;
 
+  // ไม่แสดงรายงานที่เก็บเรียบร้อย/ยกเลิกแล้วบนแผนที่ เพื่อไม่ให้หมุดเก่าค้างอยู่
+  const visibleReports = useMemo(
+    () => wasteReports.filter((report) => report.status !== 'completed' && report.status !== 'cancelled'),
+    [wasteReports]
+  );
+
   return (
     <div className="relative h-full w-full">
       <MapContainer
@@ -79,12 +85,16 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
           </Marker>
         )}
 
-        {wasteReports.map((report) => (
-          <Marker key={report.id} position={[report.latitude, report.longitude]} icon={wasteReportIcon}>
+        {visibleReports.map((report) => (
+          <Marker
+            key={report.id}
+            position={[report.latitude, report.longitude]}
+            icon={report.status === 'truck_dispatched' ? truckDispatchedIcon : wasteReportIcon}
+          >
             <Popup>
               <p className="font-semibold">รายงานขยะ</p>
               <p>ประเภท: {WASTE_TYPE_LABELS[report.wasteType]}</p>
-              <p>สถานะ: {report.status}</p>
+              <p>สถานะ: {REPORT_STATUS_LABELS[report.status]}</p>
             </Popup>
           </Marker>
         ))}
