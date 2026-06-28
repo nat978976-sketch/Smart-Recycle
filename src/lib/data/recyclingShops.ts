@@ -1,7 +1,7 @@
 import type { RecyclingShop } from '@/types';
 
 // ข้อมูลร้านรับซื้อของเก่าจริงในเขตเทศบาลนครขอนแก่น
-// นำเข้าจาก Google My Maps: https://www.google.com/maps/d/edit?mid=1AjIMx9i1CYSRfAXR3sxDroSuCHI28F0
+// นำเข้าจาก Google My Maps: https://www.google.com/maps/d/edit?mid=1Wh3th3laPUvYqG_2vjBoEjRtkLkBM8M
 // หมายเหตุ: ข้อมูลต้นทาง (KML) มีแค่ชื่อ/พิกัด/เบอร์โทร ไม่มีหมวดประเภทขยะที่รับซื้อ
 // จึงตั้งค่า acceptedWasteTypes เป็นค่าสมมติ (รับซื้อทั่วไปยกเว้นเศษอาหาร) ไปก่อน
 // ควรให้ร้านยืนยัน/แก้ไขหมวดที่รับจริงผ่านหน้า shop-dashboard ในอนาคต
@@ -36,8 +36,8 @@ export const SEED_RECYCLING_SHOPS: RecyclingShop[] = [
   {
     id: 'shop-3',
     name: 'รุ่งเจริญ',
-    latitude: 16.503097,
-    longitude: 102.8316286,
+    latitude: 16.4433337,
+    longitude: 102.8308334,
     phone: '080-457-7265',
     acceptedWasteTypes: DEFAULT_ACCEPTED_TYPES,
     isActive: true,
@@ -81,8 +81,8 @@ export const SEED_RECYCLING_SHOPS: RecyclingShop[] = [
   {
     id: 'shop-8',
     name: 'โชคชัยรับซื้อของเก่า',
-    latitude: 16.4183264,
-    longitude: 102.8301915,
+    latitude: 16.4183458,
+    longitude: 102.8301971,
     phone: '062-019-1399',
     acceptedWasteTypes: DEFAULT_ACCEPTED_TYPES,
     isActive: true,
