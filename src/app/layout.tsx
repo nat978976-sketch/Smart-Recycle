@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import VisitTracker from '@/components/VisitTracker';
 
 export const metadata: Metadata = {
   title: 'Khon Kaen Waste Management Ecosystem',
@@ -9,7 +10,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th">
-      <body className="h-screen overflow-hidden bg-gray-100 text-gray-900">{children}</body>
+      <body className="h-screen overflow-hidden bg-gray-100 text-gray-900">
+        <VisitTracker />
+        {children}
+      </body>
     </html>
   );
 }

@@ -33,18 +33,26 @@ export default function HomePage() {
       {registeredShopId ? (
         <Link
           href="/shop-dashboard"
-          className="absolute bottom-6 left-3 z-[1000] rounded-full bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow-md hover:bg-emerald-700"
+          className="absolute left-1/2 top-3 z-[1000] -translate-x-1/2 rounded-full bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow-md hover:bg-emerald-700"
         >
           🔔 แจ้งเตือนร้านค้า
         </Link>
       ) : (
         <Link
           href="/shop-register"
-          className="absolute bottom-6 left-3 z-[1000] rounded-full bg-white px-3 py-2 text-sm font-medium text-emerald-700 shadow-md hover:bg-emerald-50"
+          className="absolute left-1/2 top-3 z-[1000] -translate-x-1/2 rounded-full bg-white px-3 py-2 text-sm font-medium text-emerald-700 shadow-md hover:bg-emerald-50"
         >
           🏪 สมัครร้านค้า
         </Link>
       )}
+
+      <Link
+        href="/admin"
+        title="จัดการเว็บไซต์"
+        className="absolute right-3 top-3 z-[1000] rounded-full bg-white p-2 text-base shadow-md hover:bg-gray-50"
+      >
+        ⚙️
+      </Link>
     </main>
   );
 }

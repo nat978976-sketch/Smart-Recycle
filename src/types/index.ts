@@ -60,3 +60,10 @@ export interface WasteClassificationResult {
   confidence: number;
   rawLabel?: string;
 }
+
+export interface VisitorLog {
+  id: string;
+  path: string;
+  userAgent: string | null;
+  visitedAt: string;
+}
