@@ -44,6 +44,26 @@ export default function AdminPage() {
     fetchOverview(password);
   }
 
+  async function handleRemoveShop(shop: RecyclingShop) {
+    if (!window.confirm(`ลบร้าน "${shop.name}" ออกจากระบบ?`)) return;
+
+    try {
+      const response = await fetch(`/api/admin/shops/${shop.id}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-password': password },
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error ?? 'ลบร้านไม่สำเร็จ');
+      }
+
+      setData((prev) => (prev ? { ...prev, shops: prev.shops.filter((s) => s.id !== shop.id) } : prev));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'ลบร้านไม่สำเร็จ');
+    }
+  }
+
   if (!data) {
     return (
       <main className="mx-auto flex h-screen max-w-sm flex-col items-center justify-center p-5">
@@ -93,9 +113,18 @@ export default function AdminPage() {
           <ul className="space-y-2">
             {data.shops.map((shop) => (
               <li key={shop.id} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold">{shop.name}</span>
-                  {shop.phone && <span className="text-xs text-gray-400">{shop.phone}</span>}
+                  <div className="flex items-center gap-2">
+                    {shop.phone && <span className="text-xs text-gray-400">{shop.phone}</span>}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveShop(shop)}
+                      className="rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100"
+                    >
+                      ลบร้าน
+                    </button>
+                  </div>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
                   📍 {shop.latitude.toFixed(5)}, {shop.longitude.toFixed(5)}

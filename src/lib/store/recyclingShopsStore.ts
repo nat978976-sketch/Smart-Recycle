@@ -18,3 +18,12 @@ export function getRecyclingShops(): RecyclingShop[] {
 export function addRecyclingShop(shop: RecyclingShop): void {
   getRecyclingShops().push(shop);
 }
+
+export function removeRecyclingShop(id: string): boolean {
+  const shops = getRecyclingShops();
+  const index = shops.findIndex((shop) => shop.id === id);
+  if (index === -1) return false;
+
+  shops.splice(index, 1);
+  return true;
+}
