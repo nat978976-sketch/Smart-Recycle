@@ -7,7 +7,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   const updated = updateWasteReport(params.id, body);
 
   if (!updated) {
-    return NextResponse.json({ error: 'ไม่พบรายงานขยะนี้' }, { status: 404 });
+    return NextResponse.json({ error: 'ไม่พบคำขอขายของเก่านี้' }, { status: 404 });
   }
 
   emitReportUpdated(updated);
