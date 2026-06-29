@@ -128,7 +128,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
           disabled={!userPosition}
           className="rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-400"
         >
-          📍 รายงานขยะ / เรียกรถเก็บขยะ
+          📍 รายงานขยะ / เรียกรถรับซื้อของเก่า
         </button>
       </div>
 
