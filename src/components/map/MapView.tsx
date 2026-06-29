@@ -92,7 +92,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
             icon={report.status === 'truck_dispatched' ? truckDispatchedIcon : wasteReportIcon}
           >
             <Popup>
-              <p className="font-semibold">รายงานขยะ</p>
+              <p className="font-semibold">คำขอขายของเก่า</p>
               <p>ประเภท: {WASTE_TYPE_LABELS[report.wasteType]}</p>
               <p>สถานะ: {REPORT_STATUS_LABELS[report.status]}</p>
             </Popup>
@@ -128,7 +128,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
           disabled={!userPosition}
           className="rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-400"
         >
-          📍 รายงานขยะ / เรียกรถรับซื้อของเก่า
+          📍 แจ้งขาย / เรียกรถรับซื้อของเก่า
         </button>
       </div>
 

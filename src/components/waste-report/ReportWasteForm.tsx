@@ -79,7 +79,7 @@ export default function ReportWasteForm({ initialPosition, onClose, onSubmit }: 
         className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">รายงานขยะ / เรียกรถเก็บขยะ</h2>
+          <h2 className="text-lg font-bold text-gray-900">แจ้งขาย / เรียกรถรับซื้อของเก่า</h2>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="ปิด">
             ✕
           </button>
@@ -141,7 +141,7 @@ export default function ReportWasteForm({ initialPosition, onClose, onSubmit }: 
           disabled={isSubmitting}
           className="w-full rounded-lg bg-emerald-600 py-3 font-semibold text-white transition hover:bg-emerald-700 disabled:bg-gray-400"
         >
-          {isSubmitting ? 'กำลังส่งคำขอ...' : 'ส่งคำขอเรียกรถเก็บขยะ'}
+          {isSubmitting ? 'กำลังส่งคำขอ...' : 'ส่งคำขอเรียกรถรับซื้อของเก่า'}
         </button>
       </form>
     </div>
