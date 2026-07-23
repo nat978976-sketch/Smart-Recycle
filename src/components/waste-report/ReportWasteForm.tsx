@@ -6,6 +6,7 @@ import type { Coordinates, WasteReport, WasteType } from '@/types';
 import { WASTE_TYPE_LABELS } from '@/types';
 
 // แปลงเป็น data URL (ไม่ใช่ blob URL) เพื่อให้ฝั่งร้านรับซื้อที่อยู่คนละแท็บ/เบราว์เซอร์เห็นรูปได้จริง
+
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -19,16 +20,24 @@ interface ReportWasteFormProps {
   initialPosition: Coordinates;
   onClose: () => void;
   onSubmit: (report: Omit<WasteReport, 'id' | 'createdAt' | 'status'>) => Promise<void> | void;
+  shopPrices?: Partial<Record<WasteType, number>>;
+  shopName?: string;
 }
 
-export default function ReportWasteForm({ initialPosition, onClose, onSubmit }: ReportWasteFormProps) {
+export default function ReportWasteForm({ initialPosition, onClose, onSubmit, shopPrices, shopName }: ReportWasteFormProps) {
   const [wasteType, setWasteType] = useState<WasteType>('plastic');
+  const [weightKg, setWeightKg] = useState('');
   const [note, setNote] = useState('');
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isClassifying, setIsClassifying] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const pricePerKg = shopPrices?.[wasteType];
+  const estimatedEarning = pricePerKg !== undefined && weightKg !== '' && Number(weightKg) > 0
+    ? pricePerKg * Number(weightKg)
+    : null;
 
   async function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -92,12 +101,30 @@ export default function ReportWasteForm({ initialPosition, onClose, onSubmit }: 
           className="mb-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:outline-none"
         >
           {Object.entries(WASTE_TYPE_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
+            <option key={value} value={value}>{label}</option>
           ))}
         </select>
-        {aiSuggestion && <p className="mb-3 text-xs text-emerald-700">{aiSuggestion}</p>}
+        {aiSuggestion && <p className="mb-2 text-xs text-emerald-700">{aiSuggestion}</p>}
+
+        <label className="mb-1 mt-2 block text-sm font-medium text-gray-700">น้ำหนักโดยประมาณ (กก.)</label>
+        <input
+          type="number"
+          min="0.1"
+          step="0.1"
+          value={weightKg}
+          onChange={(e) => setWeightKg(e.target.value)}
+          placeholder="เช่น 5"
+          className="mb-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:outline-none"
+        />
+        {estimatedEarning !== null ? (
+          <div className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm">
+            <span className="text-gray-600">คาดว่าจะได้รับ</span>
+            <span className="ml-2 font-bold text-emerald-700">≈ ฿{estimatedEarning.toFixed(0)}</span>
+            {shopName && <span className="ml-1 text-xs text-gray-400">จาก {shopName}</span>}
+          </div>
+        ) : pricePerKg === undefined && weightKg !== '' ? (
+          <p className="mb-3 text-xs text-gray-400">ร้านใกล้สุดไม่ระบุราคาสำหรับขยะประเภทนี้</p>
+        ) : <div className="mb-3" />}
 
         <label className="mb-1 mt-3 block text-sm font-medium text-gray-700">
           รูปถ่าย (สำหรับวิเคราะห์ด้วย AI)

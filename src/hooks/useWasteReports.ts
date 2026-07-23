@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { WasteReport } from '@/types';
+import { saveReportId } from '@/lib/reportHistory';
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -39,6 +40,8 @@ export function useWasteReports(status?: WasteReport['status']) {
         body: JSON.stringify(report),
       });
       if (response.ok) {
+        const created: WasteReport = await response.json();
+        saveReportId(created.id);
         await fetchReports();
       }
     },

@@ -1,11 +1,5 @@
 import type { RecyclingShop } from '@/types';
 
-// ข้อมูลร้านรับซื้อของเก่าจริงในเขตเทศบาลนครขอนแก่น
-// นำเข้าจาก Google My Maps: https://www.google.com/maps/d/edit?mid=1Wh3th3laPUvYqG_2vjBoEjRtkLkBM8M
-// หมายเหตุ: ข้อมูลต้นทาง (KML) มีแค่ชื่อ/พิกัด/เบอร์โทร ไม่มีหมวดประเภทขยะที่รับซื้อ
-// จึงตั้งค่า acceptedWasteTypes เป็นค่าสมมติ (รับซื้อทั่วไปยกเว้นเศษอาหาร) ไปก่อน
-// ควรให้ร้านยืนยัน/แก้ไขหมวดที่รับจริงผ่านหน้า shop-dashboard ในอนาคต
-// เมื่อเชื่อมต่อ Supabase จริง ให้ดึงจากตาราง recycling_shops แทน (ดู supabase/schema.sql)
 const DEFAULT_ACCEPTED_TYPES: RecyclingShop['acceptedWasteTypes'] = [
   'plastic',
   'paper',
@@ -13,6 +7,15 @@ const DEFAULT_ACCEPTED_TYPES: RecyclingShop['acceptedWasteTypes'] = [
   'metal',
   'electronic',
 ];
+
+// ราคาอ้างอิงตลาดรับซื้อของเก่าทั่วไปในไทย (บาท/กก.)
+const DEFAULT_PRICE_PER_KG: RecyclingShop['pricePerKg'] = {
+  plastic:    5,
+  paper:      2,
+  glass:      1,
+  metal:      8,
+  electronic: 30,
+};
 
 export const SEED_RECYCLING_SHOPS: RecyclingShop[] = [
   {
@@ -22,6 +25,7 @@ export const SEED_RECYCLING_SHOPS: RecyclingShop[] = [
     longitude: 102.8511445,
     phone: '065-156-5628',
     acceptedWasteTypes: DEFAULT_ACCEPTED_TYPES,
+    pricePerKg: DEFAULT_PRICE_PER_KG,
     isActive: true,
   },
   {
@@ -31,6 +35,7 @@ export const SEED_RECYCLING_SHOPS: RecyclingShop[] = [
     longitude: 102.8580524,
     phone: '081-717-7633',
     acceptedWasteTypes: DEFAULT_ACCEPTED_TYPES,
+    pricePerKg: DEFAULT_PRICE_PER_KG,
     isActive: true,
   },
   {
@@ -40,6 +45,7 @@ export const SEED_RECYCLING_SHOPS: RecyclingShop[] = [
     longitude: 102.8308334,
     phone: '080-457-7265',
     acceptedWasteTypes: DEFAULT_ACCEPTED_TYPES,
+    pricePerKg: DEFAULT_PRICE_PER_KG,
     isActive: true,
   },
   {
@@ -49,6 +55,7 @@ export const SEED_RECYCLING_SHOPS: RecyclingShop[] = [
     longitude: 102.8575949,
     phone: '081-954-5813',
     acceptedWasteTypes: DEFAULT_ACCEPTED_TYPES,
+    pricePerKg: DEFAULT_PRICE_PER_KG,
     isActive: true,
   },
   {
@@ -58,6 +65,7 @@ export const SEED_RECYCLING_SHOPS: RecyclingShop[] = [
     longitude: 102.8453573,
     phone: '089-711-6922',
     acceptedWasteTypes: DEFAULT_ACCEPTED_TYPES,
+    pricePerKg: DEFAULT_PRICE_PER_KG,
     isActive: true,
   },
   {
@@ -67,6 +75,7 @@ export const SEED_RECYCLING_SHOPS: RecyclingShop[] = [
     longitude: 102.825407,
     phone: '081-260-7180',
     acceptedWasteTypes: DEFAULT_ACCEPTED_TYPES,
+    pricePerKg: DEFAULT_PRICE_PER_KG,
     isActive: true,
   },
   {
@@ -76,6 +85,7 @@ export const SEED_RECYCLING_SHOPS: RecyclingShop[] = [
     longitude: 102.8302816,
     phone: '095-958-4745',
     acceptedWasteTypes: DEFAULT_ACCEPTED_TYPES,
+    pricePerKg: DEFAULT_PRICE_PER_KG,
     isActive: true,
   },
   {
@@ -85,6 +95,7 @@ export const SEED_RECYCLING_SHOPS: RecyclingShop[] = [
     longitude: 102.8301971,
     phone: '062-019-1399',
     acceptedWasteTypes: DEFAULT_ACCEPTED_TYPES,
+    pricePerKg: DEFAULT_PRICE_PER_KG,
     isActive: true,
   },
 ];

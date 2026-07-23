@@ -24,6 +24,7 @@ export async function POST(request: Request) {
     longitude: body.longitude,
     acceptedWasteTypes: body.acceptedWasteTypes,
     phone: body.phone || undefined,
+    pricePerKg: body.pricePerKg || undefined,
     isActive: true,
   };
 

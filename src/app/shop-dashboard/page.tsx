@@ -8,7 +8,17 @@ import { useRecyclingShops } from '@/hooks/useRecyclingShops';
 import { distanceKm } from '@/lib/geo/distance';
 import { getStoredShopId } from '@/lib/shopIdentity';
 import { REPORT_STATUS_LABELS, WASTE_TYPE_LABELS } from '@/types';
-import type { WasteReport } from '@/types';
+import type { WasteReport, WasteType } from '@/types';
+
+const REFERENCE_PRICE: Partial<Record<WasteType, number>> = {
+  plastic:    5,
+  paper:      2,
+  glass:      1,
+  metal:      8,
+  electronic: 30,
+  organic:    0,
+  mixed:      1,
+};
 
 // โหลดแผนที่แบบ client-only เพราะ Leaflet ต้องใช้ window/document
 const ShopReportsMap = dynamic(() => import('@/components/shop/ShopReportsMap'), {
@@ -54,6 +64,48 @@ export default function ShopDashboardPage() {
   const [shopId] = useState<string>(() => getStoredShopId() ?? DEMO_FALLBACK_SHOP_ID);
   const { shops, isLoading: isLoadingShops } = useRecyclingShops();
   const shop = shops.find((candidate) => candidate.id === shopId);
+
+  // state แก้ราคา
+  const [showPriceEditor, setShowPriceEditor] = useState(false);
+  const [editPrices, setEditPrices] = useState<Partial<Record<WasteType, string>>>({});
+  const [isSavingPrice, setIsSavingPrice] = useState(false);
+  const [priceSaveMsg, setPriceSaveMsg] = useState<string | null>(null);
+
+  // sync ราคาปัจจุบันของร้านเข้า editor เมื่อ shop โหลดครั้งแรก
+  useEffect(() => {
+    if (shop?.pricePerKg) {
+      setEditPrices(
+        Object.fromEntries(
+          Object.entries(shop.pricePerKg).map(([k, v]) => [k, String(v)])
+        )
+      );
+    }
+  }, [shop?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function savePrices() {
+    if (!shop) return;
+    setIsSavingPrice(true);
+    setPriceSaveMsg(null);
+    try {
+      const pricePerKg = Object.fromEntries(
+        Object.entries(editPrices)
+          .filter(([, v]) => v !== '' && !isNaN(Number(v)))
+          .map(([k, v]) => [k, Number(v)])
+      );
+      const res = await fetch(`/api/recycling-shops/${shop.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pricePerKg }),
+      });
+      if (!res.ok) throw new Error('บันทึกไม่สำเร็จ');
+      setPriceSaveMsg('✅ บันทึกราคาแล้ว');
+      setTimeout(() => setPriceSaveMsg(null), 3000);
+    } catch {
+      setPriceSaveMsg('❌ บันทึกไม่สำเร็จ');
+    } finally {
+      setIsSavingPrice(false);
+    }
+  }
 
   const { reports, isConnected, newReportId, clearNewReportFlag, acceptReport, confirmTruckDispatch, completeReport } =
     useShopReportStream({ shopId, radiusKm: NOTIFICATION_RADIUS_KM });
@@ -121,6 +173,71 @@ export default function ShopDashboardPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
+
+        {/* ── ส่วนแก้ไขราคารับซื้อ ── */}
+        <section className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50">
+          <button
+            type="button"
+            onClick={() => setShowPriceEditor((v) => !v)}
+            className="flex w-full items-center justify-between px-4 py-3 text-left"
+          >
+            <span className="text-sm font-semibold text-emerald-800">💰 ราคารับซื้อของร้าน</span>
+            <span className="text-xs text-emerald-600">{showPriceEditor ? '▲ ซ่อน' : '▼ แก้ไข'}</span>
+          </button>
+
+          {showPriceEditor && shop && (
+            <div className="border-t border-emerald-200 px-4 pb-4 pt-3">
+              {/* ปุ่มใส่ราคาอ้างอิง */}
+              <button
+                type="button"
+                onClick={() =>
+                  setEditPrices(
+                    Object.fromEntries(
+                      shop.acceptedWasteTypes
+                        .filter((t) => REFERENCE_PRICE[t] !== undefined)
+                        .map((t) => [t, String(REFERENCE_PRICE[t])])
+                    )
+                  )
+                }
+                className="mb-3 w-full rounded-lg border border-emerald-300 bg-white py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-50 transition"
+              >
+                📋 ใส่ราคาอ้างอิงตลาด
+              </button>
+              <div className="space-y-2">
+                {shop.acceptedWasteTypes.map((type) => (
+                  <div key={type} className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-gray-700">{WASTE_TYPE_LABELS[type]}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-gray-400">฿</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={editPrices[type] ?? ''}
+                        onChange={(e) => setEditPrices((p) => ({ ...p, [type]: e.target.value }))}
+                        placeholder="ราคา"
+                        className="w-20 rounded-lg border border-gray-300 px-2 py-1 text-center text-sm focus:border-emerald-500 focus:outline-none"
+                      />
+                      <span className="text-xs text-gray-400">/กก.</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {priceSaveMsg && (
+                <p className="mt-2 text-center text-sm font-medium text-emerald-700">{priceSaveMsg}</p>
+              )}
+              <button
+                type="button"
+                onClick={savePrices}
+                disabled={isSavingPrice}
+                className="mt-3 w-full rounded-lg bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:bg-gray-400"
+              >
+                {isSavingPrice ? 'กำลังบันทึก...' : 'บันทึกราคา'}
+              </button>
+            </div>
+          )}
+        </section>
+
         {myActiveReports.length > 0 && (
           <section className="mb-5">
             <h2 className="mb-2 text-sm font-semibold text-gray-700">🚚 งานที่ร้านคุณรับไว้</h2>

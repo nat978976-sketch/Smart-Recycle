@@ -1,4 +1,5 @@
 import type { WasteReport } from '@/types';
+import { generateSeedReports } from '@/lib/data/seedReports';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -9,7 +10,7 @@ declare global {
 // เมื่อขึ้นโปรดักชันให้แทนที่ด้วยตาราง waste_reports ใน Supabase (ดู supabase/schema.sql)
 export function getWasteReports(): WasteReport[] {
   if (!global.__wasteReportsStore) {
-    global.__wasteReportsStore = [];
+    global.__wasteReportsStore = generateSeedReports();
   }
   return global.__wasteReportsStore;
 }

@@ -91,6 +91,16 @@ export default function AdminPage() {
     );
   }
 
+  const SHOP_PATHS = ['/shop-dashboard', '/shop-register'];
+  const shopVisitors = data.visitors.filter((v) => SHOP_PATHS.includes(v.path));
+  const userVisitors = data.visitors.filter((v) => !SHOP_PATHS.includes(v.path));
+
+  const PATH_LABELS: Record<string, string> = {
+    '/': 'หน้าหลัก (แผนที่)',
+    '/shop-register': 'สมัครร้านค้า',
+    '/shop-dashboard': 'แดชบอร์ดร้านค้า',
+  };
+
   return (
     <main className="mx-auto flex h-screen max-w-2xl flex-col">
       <header className="flex items-center justify-between p-4 pb-2">
@@ -106,6 +116,23 @@ export default function AdminPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-4">
+        {/* สถิติสรุป */}
+        <div className="mb-6 grid grid-cols-3 gap-3">
+          <div className="rounded-xl bg-gray-50 p-3 text-center shadow-sm border border-gray-200">
+            <p className="text-2xl font-bold text-gray-800">{data.visitors.length}</p>
+            <p className="mt-0.5 text-xs text-gray-500">ทั้งหมด</p>
+          </div>
+          <div className="rounded-xl bg-emerald-50 p-3 text-center shadow-sm border border-emerald-100">
+            <p className="text-2xl font-bold text-emerald-700">{userVisitors.length}</p>
+            <p className="mt-0.5 text-xs text-emerald-600">ผู้ใช้ทั่วไป</p>
+          </div>
+          <div className="rounded-xl bg-blue-50 p-3 text-center shadow-sm border border-blue-100">
+            <p className="text-2xl font-bold text-blue-700">{shopVisitors.length}</p>
+            <p className="mt-0.5 text-xs text-blue-600">ร้านค้า</p>
+          </div>
+        </div>
+
+        {/* ร้านค้า */}
         <section className="mb-6">
           <h2 className="mb-2 text-sm font-semibold text-gray-700">
             🏪 ร้านค้าที่สมัครแล้ว ({data.shops.length})
@@ -134,19 +161,22 @@ export default function AdminPage() {
                 </p>
               </li>
             ))}
-            {data.shops.length === 0 && <p className="text-gray-500">ยังไม่มีร้านสมัคร</p>}
+            {data.shops.length === 0 && <p className="text-sm text-gray-500">ยังไม่มีร้านสมัคร</p>}
           </ul>
         </section>
 
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-gray-700">
-            👥 คนที่เข้าเว็บไซต์ ({data.visitors.length})
+        {/* ประวัติผู้ใช้ทั่วไป */}
+        <section className="mb-6">
+          <h2 className="mb-2 text-sm font-semibold text-emerald-700">
+            🙋 ผู้ใช้ทั่วไป ({userVisitors.length} ครั้ง)
           </h2>
           <ul className="space-y-2">
-            {data.visitors.map((visitor) => (
-              <li key={visitor.id} className="rounded-xl border border-gray-200 bg-white p-3 text-sm shadow-sm">
+            {userVisitors.map((visitor) => (
+              <li key={visitor.id} className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm shadow-sm">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-700">{visitor.path}</span>
+                  <span className="font-medium text-gray-700">
+                    {PATH_LABELS[visitor.path] ?? visitor.path}
+                  </span>
                   <span className="text-xs text-gray-400">
                     {new Date(visitor.visitedAt).toLocaleString('th-TH')}
                   </span>
@@ -154,7 +184,30 @@ export default function AdminPage() {
                 {visitor.userAgent && <p className="mt-1 truncate text-xs text-gray-400">{visitor.userAgent}</p>}
               </li>
             ))}
-            {data.visitors.length === 0 && <p className="text-gray-500">ยังไม่มีผู้เข้าชม</p>}
+            {userVisitors.length === 0 && <p className="text-sm text-gray-500">ยังไม่มีผู้ใช้เข้าชม</p>}
+          </ul>
+        </section>
+
+        {/* ประวัติร้านค้า */}
+        <section>
+          <h2 className="mb-2 text-sm font-semibold text-blue-700">
+            🏪 ฝั่งร้านค้า ({shopVisitors.length} ครั้ง)
+          </h2>
+          <ul className="space-y-2">
+            {shopVisitors.map((visitor) => (
+              <li key={visitor.id} className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-700">
+                    {PATH_LABELS[visitor.path] ?? visitor.path}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {new Date(visitor.visitedAt).toLocaleString('th-TH')}
+                  </span>
+                </div>
+                {visitor.userAgent && <p className="mt-1 truncate text-xs text-gray-400">{visitor.userAgent}</p>}
+              </li>
+            ))}
+            {shopVisitors.length === 0 && <p className="text-sm text-gray-500">ยังไม่มีร้านค้าเข้าชม</p>}
           </ul>
         </section>
       </div>

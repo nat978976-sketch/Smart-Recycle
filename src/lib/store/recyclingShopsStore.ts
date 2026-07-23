@@ -19,6 +19,14 @@ export function addRecyclingShop(shop: RecyclingShop): void {
   getRecyclingShops().push(shop);
 }
 
+export function updateRecyclingShop(id: string, updates: Partial<RecyclingShop>): RecyclingShop | null {
+  const shops = getRecyclingShops();
+  const index = shops.findIndex((s) => s.id === id);
+  if (index === -1) return null;
+  shops[index] = { ...shops[index], ...updates };
+  return shops[index];
+}
+
 export function removeRecyclingShop(id: string): boolean {
   const shops = getRecyclingShops();
   const index = shops.findIndex((shop) => shop.id === id);

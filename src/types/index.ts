@@ -53,6 +53,7 @@ export interface RecyclingShop {
   acceptedWasteTypes: WasteType[];
   isActive: boolean;
   phone?: string;
+  pricePerKg?: Partial<Record<WasteType, number>>;
 }
 
 export interface WasteClassificationResult {
