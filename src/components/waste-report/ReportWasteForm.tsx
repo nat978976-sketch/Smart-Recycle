@@ -120,9 +120,9 @@ export default function ReportWasteForm({ initialPosition, onClose, onSubmit }: 
           </div>
         )}
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">ตำแหน่งปัจจุบัน</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700">จุดที่ต้องการให้มารับ</label>
         <p className="mb-3 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600">
-          📍 {initialPosition.latitude.toFixed(5)}, {initialPosition.longitude.toFixed(5)}
+          📌 {initialPosition.latitude.toFixed(5)}, {initialPosition.longitude.toFixed(5)}
         </p>
 
         <label className="mb-1 block text-sm font-medium text-gray-700">หมายเหตุ (ถ้ามี)</label>

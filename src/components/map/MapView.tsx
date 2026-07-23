@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { useMemo, useRef, useState } from 'react';
+import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import type { Marker as LeafletMarker } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import ReportWasteForm from '@/components/waste-report/ReportWasteForm';
-import { recyclingHubIcon, truckDispatchedIcon, userLocationIcon, wasteReportIcon } from './icons';
+import { pickupPinIcon, recyclingHubIcon, truckDispatchedIcon, userLocationIcon, wasteReportIcon } from './icons';
 import { REPORT_STATUS_LABELS, WASTE_TYPE_LABELS } from '@/types';
 import type { Coordinates, RecyclingShop, WasteReport } from '@/types';
 import { distanceKm } from '@/lib/geo/distance';
@@ -34,6 +35,33 @@ interface MapViewProps {
   onSubmitReport?: (report: Omit<WasteReport, 'id' | 'createdAt' | 'status'>) => Promise<void> | void;
 }
 
+function DraggablePickupMarker({ position, onMove }: { position: Coordinates; onMove: (pos: Coordinates) => void }) {
+  const markerRef = useRef<LeafletMarker>(null);
+
+  useMapEvents({
+    click(e) {
+      onMove({ latitude: e.latlng.lat, longitude: e.latlng.lng });
+    },
+  });
+
+  return (
+    <Marker
+      draggable
+      position={[position.latitude, position.longitude]}
+      icon={pickupPinIcon}
+      ref={markerRef}
+      eventHandlers={{
+        dragend: () => {
+          const ll = markerRef.current?.getLatLng();
+          if (ll) onMove({ latitude: ll.lat, longitude: ll.lng });
+        },
+      }}
+    >
+      <Popup>📌 จุดรับของ — ลากหรือแตะแผนที่เพื่อเปลี่ยนตำแหน่ง</Popup>
+    </Marker>
+  );
+}
+
 function RecenterControl({ position }: { position: Coordinates | null }) {
   const map = useMap();
 
@@ -55,6 +83,24 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [mapLayer, setMapLayer] = useState<MapLayerType>('street');
   const [appMode, setAppMode] = useState<AppMode>('report');
+  const [isPickupMode, setIsPickupMode] = useState(false);
+  const [pickupPosition, setPickupPosition] = useState<Coordinates | null>(null);
+
+  function enterPickupMode() {
+    if (!userPosition) return;
+    setPickupPosition(userPosition);
+    setIsPickupMode(true);
+  }
+
+  function confirmPickup() {
+    setIsPickupMode(false);
+    setIsReportOpen(true);
+  }
+
+  function cancelPickupMode() {
+    setIsPickupMode(false);
+    setPickupPosition(null);
+  }
 
   const userPosition = useMemo<Coordinates | null>(
     () => (latitude !== null && longitude !== null ? { latitude, longitude } : null),
@@ -126,8 +172,39 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
           </Marker>
         ))}
 
+        {isPickupMode && pickupPosition && (
+          <DraggablePickupMarker position={pickupPosition} onMove={setPickupPosition} />
+        )}
+
         <RecenterControl position={userPosition} />
       </MapContainer>
+
+      {isPickupMode && (
+        <div className="absolute top-3 left-1/2 z-[1000] -translate-x-1/2 w-[90vw] max-w-sm rounded-2xl bg-white p-3 shadow-xl text-center">
+          <p className="text-sm font-medium text-gray-700">📌 ลากหมุดแดง หรือแตะแผนที่เพื่อเลือกจุดรับของ</p>
+          {pickupPosition && (
+            <p className="mt-0.5 text-xs text-gray-400">
+              {pickupPosition.latitude.toFixed(5)}, {pickupPosition.longitude.toFixed(5)}
+            </p>
+          )}
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              onClick={cancelPickupMode}
+              className="flex-1 rounded-full border border-gray-200 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
+            >
+              ✕ ยกเลิก
+            </button>
+            <button
+              type="button"
+              onClick={confirmPickup}
+              className="flex-1 rounded-full bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition"
+            >
+              ✓ ยืนยันจุดรับ
+            </button>
+          </div>
+        </div>
+      )}
 
       <button
         type="button"
@@ -139,7 +216,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
       </button>
 
       {/* โหมดเรียกรถ */}
-      {appMode === 'report' && (
+      {appMode === 'report' && !isPickupMode && (
         <div className="absolute bottom-6 left-1/2 z-[1000] -translate-x-1/2 flex flex-col items-center gap-2">
           <button
             type="button"
@@ -150,7 +227,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
           </button>
           <button
             type="button"
-            onClick={() => setIsReportOpen(true)}
+            onClick={enterPickupMode}
             disabled={!userPosition}
             className="rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-400"
           >
@@ -209,13 +286,14 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
         </div>
       )}
 
-      {isReportOpen && userPosition && (
+      {isReportOpen && (pickupPosition ?? userPosition) && (
         <ReportWasteForm
-          initialPosition={userPosition}
-          onClose={() => setIsReportOpen(false)}
+          initialPosition={(pickupPosition ?? userPosition)!}
+          onClose={() => { setIsReportOpen(false); setPickupPosition(null); }}
           onSubmit={async (data) => {
             await onSubmitReport?.(data);
             setIsReportOpen(false);
+            setPickupPosition(null);
           }}
         />
       )}
