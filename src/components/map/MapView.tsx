@@ -29,7 +29,6 @@ const Map3DView = dynamic(() => import('./Map3DView'), {
   ),
 });
 
-type AppMode = 'report' | 'navigate';
 
 // ศูนย์กลางเทศบาลนครขอนแก่น ใช้เป็นจุดตั้งต้นของแผนที่ก่อนทราบตำแหน่งผู้ใช้
 const KHON_KAEN_CENTER: Coordinates = { latitude: 16.4419, longitude: 102.836 };
@@ -59,6 +58,7 @@ interface MapViewProps {
   wasteReports?: WasteReport[];
   recyclingShops?: RecyclingShop[];
   onSubmitReport?: (report: Omit<WasteReport, 'id' | 'createdAt' | 'status'>) => Promise<void> | void;
+  onCancelReport?: (id: string) => Promise<void> | void;
 }
 
 function DraggablePickupMarker({ position, onMove }: { position: Coordinates; onMove: (pos: Coordinates) => void }) {
@@ -96,7 +96,7 @@ function RecenterControl({ position }: { position: Coordinates | null }) {
       type="button"
       onClick={() => position && map.flyTo([position.latitude, position.longitude], 16)}
       disabled={!position}
-      className="absolute right-3 top-3 z-[1000] rounded-full bg-white p-2 text-lg shadow-md disabled:opacity-50"
+      className="absolute right-3 top-3 z-[1000] rounded-full bg-white p-2 text-lg shadow-md disabled:opacity-50 dark:bg-gray-800"
       aria-label="ไปยังตำแหน่งของฉัน"
     >
       🎯
@@ -104,11 +104,10 @@ function RecenterControl({ position }: { position: Coordinates | null }) {
   );
 }
 
-export default function MapView({ wasteReports = [], recyclingShops = [], onSubmitReport }: MapViewProps) {
+export default function MapView({ wasteReports = [], recyclingShops = [], onSubmitReport, onCancelReport }: MapViewProps) {
   const { latitude, longitude, error, isLoading } = useGeolocation();
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [mapLayer, setMapLayer] = useState<MapLayerType>('street');
-  const [appMode, setAppMode] = useState<AppMode>('report');
   const [isPickupMode, setIsPickupMode] = useState(false);
   const [pickupPosition, setPickupPosition] = useState<Coordinates | null>(null);
   const [selectedShop, setSelectedShop] = useState<RecyclingShop | null>(null);
@@ -200,7 +199,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
   return (
     <div className="relative h-full w-full">
       {mapLayer === '3d' ? (
-        <Map3DView center={mapCenter} recyclingShops={recyclingShops} />
+        <Map3DView center={mapCenter} recyclingShops={recyclingShops} wasteReports={visibleReports} />
       ) : (
         <MapContainer
           center={[mapCenter.latitude, mapCenter.longitude]}
@@ -252,10 +251,10 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
       )}
 
       {isPickupMode && (
-        <div className="absolute top-3 left-1/2 z-[1000] -translate-x-1/2 w-[90vw] max-w-sm rounded-2xl bg-white p-3 shadow-xl text-center">
-          <p className="text-sm font-medium text-gray-700">📌 ลากหมุดแดง หรือแตะแผนที่เพื่อเลือกจุดรับของ</p>
+        <div className="absolute top-3 left-1/2 z-[1000] -translate-x-1/2 w-[90vw] max-w-sm rounded-2xl bg-white p-3 shadow-xl text-center dark:bg-gray-900">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">📌 ลากหมุดแดง หรือแตะแผนที่เพื่อเลือกจุดรับของ</p>
           {pickupPosition && (
-            <p className="mt-0.5 text-xs text-gray-400">
+            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
               {pickupPosition.latitude.toFixed(5)}, {pickupPosition.longitude.toFixed(5)}
             </p>
           )}
@@ -263,7 +262,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
             <button
               type="button"
               onClick={cancelPickupMode}
-              className="flex-1 rounded-full border border-gray-200 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
+              className="flex-1 rounded-full border border-gray-200 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               ✕ ยกเลิก
             </button>
@@ -284,14 +283,13 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
           const next = LAYER_CYCLE[(LAYER_CYCLE.indexOf(prev) + 1) % LAYER_CYCLE.length];
           return next;
         })}
-        className="absolute right-3 top-16 z-[1000] rounded-full bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-md hover:bg-gray-100"
+        className="absolute right-3 top-16 z-[1000] rounded-full bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-md hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
         aria-label="สลับรูปแบบแผนที่"
       >
         {LAYER_LABELS[LAYER_CYCLE[(LAYER_CYCLE.indexOf(mapLayer) + 1) % LAYER_CYCLE.length]]}
       </button>
 
-      {/* โหมดเรียกรถ */}
-      {appMode === 'report' && !isPickupMode && (
+      {!isPickupMode && (
         <div className="absolute bottom-6 left-1/2 z-[1000] -translate-x-1/2 flex flex-col items-center gap-2 w-[92vw] max-w-sm">
           {/* กรองตามประเภทขยะ */}
           <div className="flex gap-1.5 overflow-x-auto w-full pb-0.5 scrollbar-none">
@@ -299,7 +297,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
               type="button"
               onClick={() => setFilterType(null)}
               className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition shadow-sm ${
-                filterType === null ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'
+                filterType === null ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
               }`}
             >
               ทั้งหมด
@@ -310,7 +308,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
                 type="button"
                 onClick={() => setFilterType(filterType === type ? null : type)}
                 className={`shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition shadow-sm ${
-                  filterType === type ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'
+                  filterType === type ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                 }`}
               >
                 {WASTE_EMOJI[type]} {WASTE_TYPE_LABELS[type]}
@@ -323,7 +321,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
             <button
               type="button"
               onClick={() => { setHistoryIds(getReportIds()); setHasNewUpdate(false); setShowHistory(true); }}
-              className="relative flex-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-md hover:bg-gray-50 transition"
+              className="relative flex-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-md hover:bg-gray-50 transition dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             >
               📋 ประวัติ
               {hasNewUpdate && (
@@ -344,13 +342,6 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
             >
               💹 ราคา
             </button>
-            <button
-              type="button"
-              onClick={() => setAppMode('navigate')}
-              className="flex-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-blue-600 shadow-md hover:bg-blue-50 transition"
-            >
-              🧭 นำทาง
-            </button>
           </div>
 
           <button
@@ -364,63 +355,10 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
         </div>
       )}
 
-      {/* โหมดนำทาง */}
-      {appMode === 'navigate' && (
-        <div className="absolute bottom-6 left-1/2 z-[1000] w-[90vw] max-w-sm -translate-x-1/2 rounded-2xl bg-white p-4 shadow-xl">
-          {!userPosition ? (
-            <p className="text-center text-sm text-gray-500">รอตำแหน่งของคุณ...</p>
-          ) : nearestShop ? (
-            <>
-              <p className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">ร้านที่ใกล้ที่สุด</p>
-              <p className="font-bold text-gray-800 text-base">{nearestShop.name}</p>
-              <p className="text-sm text-gray-500 mt-0.5">
-                ห่าง {nearestShop.distanceKm < 1
-                  ? `${Math.round(nearestShop.distanceKm * 1000)} เมตร`
-                  : `${nearestShop.distanceKm.toFixed(1)} กม.`}
-              </p>
-              {/* ราคารับซื้อ */}
-              {nearestShop.pricePerKg && Object.keys(nearestShop.pricePerKg).length > 0 ? (
-                <div className="mt-1.5 rounded-xl bg-blue-50 px-3 py-2">
-                  <p className="mb-1 text-xs font-semibold text-blue-500 uppercase tracking-wide">ราคารับซื้อ</p>
-                  <div className="flex flex-wrap gap-1">
-                    {nearestShop.acceptedWasteTypes.map((t) => {
-                      const price = nearestShop.pricePerKg?.[t];
-                      return (
-                        <span key={t} className="rounded-full bg-white px-2 py-0.5 text-xs text-gray-700 shadow-sm">
-                          {WASTE_TYPE_LABELS[t]}{price !== undefined ? ` ฿${price}` : ''}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">รับ: {nearestShop.acceptedWasteTypes.map((t) => WASTE_TYPE_LABELS[t]).join(', ')}</p>
-              )}
-              {nearestShop.phone && <p className="mt-1 text-sm text-gray-500">โทร: {nearestShop.phone}</p>}
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${nearestShop.latitude},${nearestShop.longitude}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 block w-full rounded-full bg-blue-600 py-2 text-center text-sm font-semibold text-white hover:bg-blue-700 transition"
-              >
-                🗺️ เปิดแผนที่นำทาง
-              </a>
-            </>
-          ) : (
-            <p className="text-center text-sm text-gray-500">ไม่พบร้านค้าในระบบ</p>
-          )}
-          <button
-            type="button"
-            onClick={() => setAppMode('report')}
-            className="mt-3 block w-full rounded-full border border-gray-200 py-2 text-center text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
-          >
-            🚛 กลับโหมดเรียกรถ
-          </button>
-        </div>
-      )}
+
 
       {isLoading && (
-        <div className="absolute left-3 top-3 z-[1000] rounded-md bg-white px-3 py-1 text-sm shadow-md">
+        <div className="absolute left-3 top-3 z-[1000] rounded-md bg-white px-3 py-1 text-sm shadow-md dark:bg-gray-800 dark:text-gray-200">
           กำลังค้นหาตำแหน่งของคุณ...
         </div>
       )}
@@ -439,7 +377,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
             : activeOrder.status === 'accepted'
             ? 'bg-blue-600 text-white'
             : 'bg-amber-400 text-amber-900'}
-          ${isLoading || error ? 'top-14' : 'top-3'}`}
+          ${isLoading || error ? 'top-28' : 'top-14'}`}
         >
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
@@ -457,13 +395,24 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => { setHistoryIds(getReportIds()); setHasNewUpdate(false); setShowHistory(true); }}
-              className="shrink-0 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold hover:bg-white/30 transition"
-            >
-              ดูรายละเอียด
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              {activeOrder.status !== 'truck_dispatched' && (
+                <button
+                  type="button"
+                  onClick={() => onCancelReport?.(activeOrder.id)}
+                  className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold hover:bg-white/30 transition"
+                >
+                  ยกเลิก
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => { setHistoryIds(getReportIds()); setHasNewUpdate(false); setShowHistory(true); }}
+                className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold hover:bg-white/30 transition"
+              >
+                ดูรายละเอียด
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -477,6 +426,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
           initialPosition={(pickupPosition ?? userPosition)!}
           shopPrices={nearestShop?.pricePerKg}
           shopName={nearestShop?.name}
+          allShops={recyclingShops}
           onClose={() => { setIsReportOpen(false); setPickupPosition(null); }}
           onSubmit={async (data) => {
             await onSubmitReport?.(data);

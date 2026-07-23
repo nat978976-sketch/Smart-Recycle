@@ -90,7 +90,34 @@ function makePinEl(name: string) {
   return wrap;
 }
 
-export default function Map3DView({ center, recyclingShops = [] }: Map3DViewProps) {
+function makeReportPinEl(isTruck: boolean) {
+  const color = isTruck ? '#7c3aed' : '#f97316';
+  const borderColor = isTruck ? '#4c1d95' : '#9a3412';
+  const emoji = isTruck ? '🚛' : '📍';
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText =
+    'display:flex;flex-direction:column;align-items:center;' +
+    'filter:drop-shadow(0 4px 12px rgba(0,0,0,.6));';
+
+  wrap.innerHTML =
+    `<div style="` +
+      `width:42px;height:42px;border-radius:50%;` +
+      `background:${color};` +
+      `border:3px solid rgba(255,255,255,0.9);` +
+      `box-shadow:0 0 0 4px ${color}55,0 4px 12px rgba(0,0,0,.4);` +
+      `display:flex;align-items:center;justify-content:center;font-size:22px;` +
+    `">${emoji}</div>` +
+    `<div style="width:3px;height:16px;background:${borderColor};border-radius:2px;"></div>` +
+    `<div style="width:0;height:0;` +
+      `border-left:7px solid transparent;border-right:7px solid transparent;` +
+      `border-top:12px solid ${borderColor};` +
+    `"></div>`;
+
+  return wrap;
+}
+
+export default function Map3DView({ center, recyclingShops = [], wasteReports = [] }: Map3DViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
 
@@ -257,6 +284,33 @@ export default function Map3DView({ center, recyclingShops = [] }: Map3DViewProp
 
       map.on('mouseenter', 'shop-walls', () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'shop-walls', () => { map.getCanvas().style.cursor = ''; });
+
+      // ---- หมุดคำขอรับซื้อ + รถ ----
+      const activeReports = wasteReports.filter(
+        (r) => r.status !== 'completed' && r.status !== 'cancelled'
+      );
+      activeReports.forEach((report) => {
+        const isTruck = report.status === 'truck_dispatched';
+        const el = makeReportPinEl(isTruck);
+
+        const label = isTruck ? '🚛 รถกำลังมารับ' : '📍 รอรับซื้อ';
+        const popup = new maplibregl.Popup({
+          offset: [0, -72],
+          maxWidth: '200px',
+          closeButton: false,
+        }).setHTML(
+          `<div style="font-family:sans-serif;padding:4px 2px">` +
+          `<p style="margin:0 0 2px;font-weight:700;font-size:13px">${label}</p>` +
+          `<p style="margin:0;color:#666;font-size:12px">` +
+          `${report.note ?? ''}` +
+          `</p></div>`
+        );
+
+        new maplibregl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([report.longitude, report.latitude])
+          .setPopup(popup)
+          .addTo(map);
+      });
     });
 
     return () => { map.remove(); mapRef.current = null; };

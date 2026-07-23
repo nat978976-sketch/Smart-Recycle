@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
 import { addWasteReport, getWasteReports } from '@/lib/store/wasteReportsStore';
 import { emitReportCreated } from '@/lib/events/reportEvents';
+import { runSimulation } from '@/lib/simulation/liveSimulator';
 import type { WasteReport } from '@/types';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get('status');
 
+  const { newReport } = runSimulation();
+
   const reports = getWasteReports().filter((report) => !status || report.status === status);
-  return NextResponse.json(reports);
+  const response = NextResponse.json(reports);
+  if (newReport) response.headers.set('x-new-report', '1');
+  return response;
 }
 
 export async function POST(request: Request) {

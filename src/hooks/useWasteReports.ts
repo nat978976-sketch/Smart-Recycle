@@ -1,20 +1,25 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WasteReport } from '@/types';
 import { saveReportId } from '@/lib/reportHistory';
 
 const POLL_INTERVAL_MS = 5000;
 
-export function useWasteReports(status?: WasteReport['status']) {
+export function useWasteReports(status?: WasteReport['status'], onNewReport?: () => void) {
   const [reports, setReports] = useState<WasteReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const onNewReportRef = useRef(onNewReport);
+  onNewReportRef.current = onNewReport;
 
   const fetchReports = useCallback(async () => {
     const query = status ? `?status=${status}` : '';
     try {
       const response = await fetch(`/api/waste-reports${query}`);
       if (response.ok) {
+        if (response.headers.get('x-new-report') === '1') {
+          onNewReportRef.current?.();
+        }
         setReports(await response.json());
       }
     } catch {
@@ -48,5 +53,17 @@ export function useWasteReports(status?: WasteReport['status']) {
     [fetchReports]
   );
 
-  return { reports, isLoading, submitReport, refetch: fetchReports };
+  const cancelReport = useCallback(
+    async (id: string) => {
+      const response = await fetch(`/api/waste-reports/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+      if (response.ok) await fetchReports();
+    },
+    [fetchReports]
+  );
+
+  return { reports, isLoading, submitReport, cancelReport, refetch: fetchReports };
 }

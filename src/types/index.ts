@@ -68,3 +68,12 @@ export interface VisitorLog {
   userAgent: string | null;
   visitedAt: string;
 }
+
+export interface ShopReview {
+  id: string;
+  shopId: string;
+  rating: number;
+  comment: string;
+  author: string;
+  createdAt: string;
+}
