@@ -8,6 +8,9 @@ import ReportWasteForm from '@/components/waste-report/ReportWasteForm';
 import { recyclingHubIcon, truckDispatchedIcon, userLocationIcon, wasteReportIcon } from './icons';
 import { REPORT_STATUS_LABELS, WASTE_TYPE_LABELS } from '@/types';
 import type { Coordinates, RecyclingShop, WasteReport } from '@/types';
+import { distanceKm } from '@/lib/geo/distance';
+
+type AppMode = 'report' | 'navigate';
 
 // ศูนย์กลางเทศบาลนครขอนแก่น ใช้เป็นจุดตั้งต้นของแผนที่ก่อนทราบตำแหน่งผู้ใช้
 const KHON_KAEN_CENTER: Coordinates = { latitude: 16.4419, longitude: 102.836 };
@@ -51,6 +54,7 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
   const { latitude, longitude, error, isLoading } = useGeolocation();
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [mapLayer, setMapLayer] = useState<MapLayerType>('street');
+  const [appMode, setAppMode] = useState<AppMode>('report');
 
   const userPosition = useMemo<Coordinates | null>(
     () => (latitude !== null && longitude !== null ? { latitude, longitude } : null),
@@ -64,6 +68,19 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
     () => wasteReports.filter((report) => report.status !== 'completed' && report.status !== 'cancelled'),
     [wasteReports]
   );
+
+  const nearestShop = useMemo<(RecyclingShop & { distanceKm: number }) | null>(() => {
+    if (!userPosition || recyclingShops.length === 0) return null;
+    const active = recyclingShops.filter((s) => s.isActive);
+    if (active.length === 0) return null;
+    let closest = active[0];
+    let closestDist = distanceKm(userPosition, active[0]);
+    for (const shop of active.slice(1)) {
+      const d = distanceKm(userPosition, shop);
+      if (d < closestDist) { closestDist = d; closest = shop; }
+    }
+    return { ...closest, distanceKm: closestDist };
+  }, [userPosition, recyclingShops]);
 
   return (
     <div className="relative h-full w-full">
@@ -121,16 +138,64 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
         {mapLayer === 'street' ? '🛰️ ดาวเทียม' : '🗺️ แผนที่ถนน'}
       </button>
 
-      <div className="absolute bottom-6 left-1/2 z-[1000] -translate-x-1/2">
-        <button
-          type="button"
-          onClick={() => setIsReportOpen(true)}
-          disabled={!userPosition}
-          className="rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-400"
-        >
-          📍 แจ้งขาย / เรียกรถรับซื้อของเก่า
-        </button>
-      </div>
+      {/* โหมดเรียกรถ */}
+      {appMode === 'report' && (
+        <div className="absolute bottom-6 left-1/2 z-[1000] -translate-x-1/2 flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAppMode('navigate')}
+            className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-md hover:bg-blue-50 transition"
+          >
+            🧭 โหมดนำทางไปร้านค้า
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsReportOpen(true)}
+            disabled={!userPosition}
+            className="rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+          >
+            📍 แจ้งขาย / เรียกรถรับซื้อของเก่า
+          </button>
+        </div>
+      )}
+
+      {/* โหมดนำทาง */}
+      {appMode === 'navigate' && (
+        <div className="absolute bottom-6 left-1/2 z-[1000] w-[90vw] max-w-sm -translate-x-1/2 rounded-2xl bg-white p-4 shadow-xl">
+          {!userPosition ? (
+            <p className="text-center text-sm text-gray-500">รอตำแหน่งของคุณ...</p>
+          ) : nearestShop ? (
+            <>
+              <p className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">ร้านที่ใกล้ที่สุด</p>
+              <p className="font-bold text-gray-800 text-base">{nearestShop.name}</p>
+              <p className="text-sm text-gray-500 mt-0.5">
+                ห่าง {nearestShop.distanceKm < 1
+                  ? `${Math.round(nearestShop.distanceKm * 1000)} เมตร`
+                  : `${nearestShop.distanceKm.toFixed(1)} กม.`}
+              </p>
+              <p className="text-sm text-gray-500">รับ: {nearestShop.acceptedWasteTypes.map((t) => WASTE_TYPE_LABELS[t]).join(', ')}</p>
+              {nearestShop.phone && <p className="text-sm text-gray-500">โทร: {nearestShop.phone}</p>}
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${nearestShop.latitude},${nearestShop.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 block w-full rounded-full bg-blue-600 py-2 text-center text-sm font-semibold text-white hover:bg-blue-700 transition"
+              >
+                🗺️ เปิดแผนที่นำทาง
+              </a>
+            </>
+          ) : (
+            <p className="text-center text-sm text-gray-500">ไม่พบร้านค้าในระบบ</p>
+          )}
+          <button
+            type="button"
+            onClick={() => setAppMode('report')}
+            className="mt-3 block w-full rounded-full border border-gray-200 py-2 text-center text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
+          >
+            🚛 กลับโหมดเรียกรถ
+          </button>
+        </div>
+      )}
 
       {isLoading && (
         <div className="absolute left-3 top-3 z-[1000] rounded-md bg-white px-3 py-1 text-sm shadow-md">
