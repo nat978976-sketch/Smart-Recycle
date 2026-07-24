@@ -64,6 +64,10 @@ export default function NavigationMap({ shops, onSelectShop, onNearestShop }: Pr
     const map = L.map(containerRef.current, {
       center: [KHON_KAEN.lat, KHON_KAEN.lng],
       zoom: 14,
+      minZoom: 12,
+      maxZoom: 19,
+      maxBounds: L.latLngBounds([[16.28, 102.68], [16.62, 103.02]]),
+      maxBoundsViscosity: 1.0,
       zoomControl: true,
     });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

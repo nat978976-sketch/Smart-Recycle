@@ -204,6 +204,10 @@ export default function MapView({ wasteReports = [], recyclingShops = [], onSubm
         <MapContainer
           center={[mapCenter.latitude, mapCenter.longitude]}
           zoom={userPosition ? 16 : 13}
+          minZoom={12}
+          maxZoom={19}
+          maxBounds={[[16.28, 102.68], [16.62, 103.02]]}
+          maxBoundsViscosity={1.0}
           scrollWheelZoom
           className="h-full w-full"
         >

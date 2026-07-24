@@ -47,8 +47,8 @@ export function generateSeedReports(): WasteReport[] {
   const endMs = new Date('2026-07-22T20:00:00+07:00').getTime();
   const spanMs = endMs - startMs;
 
-  // 462 รายการที่ปิดแล้ว (completed/cancelled) — ไม่แสดงบนแผนที่
-  for (let i = 0; i < 462; i++) {
+  // 456 รายการที่ปิดแล้ว (completed/cancelled) — ไม่แสดงบนแผนที่
+  for (let i = 0; i < 456; i++) {
     const wasteType = pickWeighted(WASTE_TYPES, WASTE_WEIGHT, rand);
     const status = CLOSED_STATUSES[Math.floor(rand() * CLOSED_STATUSES.length)];
     const note = NOTES[Math.floor(rand() * NOTES.length)];
@@ -70,25 +70,31 @@ export function generateSeedReports(): WasteReport[] {
     });
   }
 
-  // 5 รายการที่ยังค้างอยู่ — แสดงเป็นหมุดบนแผนที่
-  const activeStatuses: ReportStatus[] = ['pending', 'accepted', 'truck_dispatched', 'pending', 'truck_dispatched'];
-  const activeWasteTypes: WasteType[] = ['plastic', 'metal', 'paper', 'glass', 'electronic'];
-  for (let i = 0; i < 5; i++) {
+  // 11 รายการที่ยังค้างอยู่ — แสดงเป็นหมุดบนแผนที่ (รถ 5 คัน + ผู้เรียก 6 คน)
+  const activeStatuses: ReportStatus[] = [
+    'truck_dispatched', 'truck_dispatched', 'truck_dispatched', 'truck_dispatched', 'truck_dispatched',
+    'pending', 'pending', 'accepted', 'pending', 'accepted', 'pending',
+  ];
+  const activeWasteTypes: WasteType[] = ['plastic', 'metal', 'paper', 'glass', 'electronic', 'organic', 'mixed', 'plastic', 'paper', 'metal', 'glass'];
+  const activeNotes = [
+    'รถกำลังออกเดินทาง', 'รถใกล้ถึงแล้ว', 'รถกำลังมา', 'รถออกจากร้านแล้ว', 'รถกำลังจัดการ',
+    'รอรับที่บ้าน', 'รอร้านรับงาน', 'ร้านรับงานแล้ว', 'รอรับอยู่', 'นัดรับวันนี้', 'รอรับที่บ้าน',
+  ];
+  for (let i = 0; i < 11; i++) {
     const status = activeStatuses[i];
     const wasteType = activeWasteTypes[i];
     const lat = LAT_CENTER + (rand() - 0.5) * 0.08;
     const lng = LNG_CENTER + (rand() - 0.5) * 0.08;
-    // รายการล่าสุดภายใน 3 วัน
     const createdAt = new Date(endMs - rand() * 3 * 24 * 60 * 60 * 1000).toISOString();
 
     reports.push({
-      id: `seed_${String(463 + i).padStart(4, '0')}`,
-      userId: `user_${String(463 + i).padStart(4, '0')}`,
+      id: `seed_${String(457 + i).padStart(4, '0')}`,
+      userId: `user_${String(457 + i).padStart(4, '0')}`,
       wasteType,
       photoUrls: [],
       latitude: parseFloat(lat.toFixed(5)),
       longitude: parseFloat(lng.toFixed(5)),
-      note: ['รอรับ', 'ร้านรับงานแล้ว', 'รถกำลังมา', 'รอรับที่บ้าน', 'นัดรับวันพรุ่งนี้'][i],
+      note: activeNotes[i],
       status,
       acceptedByShopId: status !== 'pending' ? 'shop_001' : null,
       createdAt,
